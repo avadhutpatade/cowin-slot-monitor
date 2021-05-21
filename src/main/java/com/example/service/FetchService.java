@@ -2,11 +2,9 @@ package com.example.service;
 
 import com.example.dto.Center;
 import com.example.dto.District;
-import com.example.dto.Session;
 import com.example.dto.State;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -20,11 +18,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 @Service
-public class FetchAndFilterService {
+public class FetchService {
 
     @Autowired
     private RestTemplate restTemplate;
@@ -33,39 +29,31 @@ public class FetchAndFilterService {
     private HttpEntity<String> httpEntity;
 
     @Autowired
-    private Logger log;
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private FilterService filterService;
 
     private String todaysDate;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     public Map<String, Map<String, List<Center>>> getAvailableCenters() {
+        Map<String, Map<String, List<Center>>> countryData = new HashMap<>();
         setTodaysDate();
         List<State> states = getAllStates();
-        Map<String, Map<String, List<Center>>> countryData = new HashMap<>();
-//        for(int i=0;i<states.size();i++) {
-//            State state = states.get(i);
-        State state = states.stream().filter(state1 -> state1.getStateName().equals("Maharashtra")).findAny().get();
-        List<District> districts = getAllDistrictsByState(state.getStateId());
-        Map<String, List<Center>> stateData = new HashMap<>();
-        for (District district : districts) {
-            List<Center> centers = getAllCentersByDistrict(district.getDistrictId());
-            List<Center> availableCenters = filterCenters(centers);
-            if (!CollectionUtils.isEmpty(availableCenters))
-                stateData.put(district.getDistrictName(), availableCenters);
+        State state = filterService.getState(states);
+        if(null != state) {
+            Map<String, List<Center>> stateData = new HashMap<>();
+            List<District> districts = getAllDistrictsByState(state.getStateId());
+            District district = filterService.getDistrict(districts);
+            if(null != district) {
+                List<Center> centers = getAllCentersByDistrict(district.getDistrictId());
+                List<Center> availableCenters = filterService.filterCenters(centers);
+                if (!CollectionUtils.isEmpty(availableCenters))
+                    stateData.put(district.getDistrictName(), availableCenters);
+                countryData.put(state.getStateName(), stateData);
+            }
         }
-        countryData.put(state.getStateName(), stateData);
-//        }
         return countryData;
-    }
-
-    private List<Center> filterCenters(List<Center> centers) {
-        for (Center center : centers) {
-            Predicate<Session> predicateCondition = session -> (session.getMinAgeLimit() == 18 && session.getAvailableCapacity() > 0);
-            center.setSessions(center.getSessions().stream().filter(session -> predicateCondition.test(session)).collect(Collectors.toList()));
-        }
-        return centers.stream().filter(center -> !CollectionUtils.isEmpty(center.getSessions())).collect(Collectors.toList());
     }
 
     private List<State> getAllStates() {

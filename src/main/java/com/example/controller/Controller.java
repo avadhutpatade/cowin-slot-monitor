@@ -1,7 +1,7 @@
 package com.example.controller;
 
 import com.example.dto.Center;
-import com.example.service.FetchAndFilterService;
+import com.example.service.FetchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +15,7 @@ import java.util.Map;
 public class Controller {
 
     @Autowired
-    private FetchAndFilterService service;
+    private FetchService service;
 
     @GetMapping
     public Map<String, Map<String, List<Center>>> getAvailableCenters() {
