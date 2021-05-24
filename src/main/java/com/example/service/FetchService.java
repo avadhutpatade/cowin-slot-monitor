@@ -6,6 +6,7 @@ import com.example.dto.State;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -13,11 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class FetchService {
@@ -40,27 +39,69 @@ public class FetchService {
     @Autowired
     private SimpleDateFormat simpleDateFormat;
 
+    @Value("${session.history.file.name}")
+    private String fileName;
+
     private String todaysDate;
 
     public Map<String, Map<String, List<Center>>> getAvailableCenters() {
         Map<String, Map<String, List<Center>>> countryData = new HashMap<>();
-        setTodaysDate();
         List<State> states = getAllStates();
         State state = filterService.getState(states);
+
         if (null != state) {
             Map<String, List<Center>> stateData = new HashMap<>();
             List<District> districts = getAllDistrictsByState(state.getStateId());
             District district = filterService.getDistrict(districts);
+
             if (null != district) {
+                setTodaysDate();
                 List<Center> centers = getAllCentersByDistrict(district.getDistrictId());
-                List<Center> availableCenters = filterService.filterCenters(centers);
-                if (!CollectionUtils.isEmpty(availableCenters))
-                    stateData.put(district.getDistrictName(), availableCenters);
-                countryData.put(state.getStateName(), stateData);
+                List<Center> availableCenters = filterService.filterByConfigurations(centers);
+
+                if (!CollectionUtils.isEmpty(availableCenters)) {
+                    Set<String> alreadyNotifiedSessionIds = readAlreadyNotifiedSessionIds();
+                    Set<String> allSessionIds = filterService.filterByAlreadyNotifiedSessions(availableCenters, alreadyNotifiedSessionIds);
+                    writeNotifiedSessionIds(allSessionIds);
+
+                    List<Center> newCenters = filterService.filterCentersWithEmptySessions(availableCenters);
+                    if (!CollectionUtils.isEmpty(newCenters)) {
+                        stateData.put(district.getDistrictName(), newCenters);
+                        countryData.put(state.getStateName(), stateData);
+                        emailService.sendMail(countryData);
+                    }
+                }
             }
         }
-        emailService.sendMail(countryData);
         return countryData;
+    }
+
+    private Set<String> readAlreadyNotifiedSessionIds() {
+        Set<String> sessionIds = null;
+        try {
+            File file = new File(fileName);
+            FileInputStream fis = new FileInputStream(file);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            sessionIds = (HashSet<String>) ois.readObject();
+            ois.close();
+            fis.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null != sessionIds ? sessionIds : new HashSet<>();
+    }
+
+    private void writeNotifiedSessionIds(Set<String> sessionIds) {
+        try {
+            File file = new File(fileName);
+            FileOutputStream fos = new FileOutputStream(file);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(sessionIds);
+            oos.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private List<State> getAllStates() {

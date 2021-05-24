@@ -53,8 +53,8 @@ public class EmailService {
             if (!CollectionUtils.isEmpty(centers)) {
                 StringBuilder body = new StringBuilder();
                 centers.forEach(center -> {
-                    body.append(newLine);
                     if (!CollectionUtils.isEmpty(center.getSessions())) {
+                        body.append(newLine);
                         body.append(getCenterInfo(center))
                                 .append(getSessionsInfo(center.getSessions()));
                     }

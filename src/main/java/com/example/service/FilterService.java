@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -50,7 +52,7 @@ public class FilterService {
                 .orElse(null);
     }
 
-    public List<Center> filterCenters(List<Center> centers) {
+    public List<Center> filterByConfigurations(List<Center> centers) {
         for (Center center : centers) {
             center.setSessions(center.getSessions().stream().filter(getSessionPredicate()).collect(Collectors.toList()));
         }
@@ -76,5 +78,26 @@ public class FilterService {
                     && (feeType == null || feeType.isBlank() || center.getFeeType().equals(feeType))                          //feeTypeCheck
             ;
         };
+    }
+
+    public Set<String> filterByAlreadyNotifiedSessions(List<Center> availableCenters, Set<String> alreadyNotifiedSessionIds) {
+        Set<String> allSessionIds = new HashSet<>();
+        for(Center center : availableCenters) {
+            center.setSessions(center.getSessions()
+                    .stream()
+                    .filter(session -> {
+                        allSessionIds.add(session.getSessionId());
+                        return !alreadyNotifiedSessionIds.contains(session.getSessionId());
+                    })
+                    .collect(Collectors.toList())
+            );
+        }
+        return allSessionIds;
+    }
+
+    public List<Center> filterCentersWithEmptySessions(List<Center> availableCenters) {
+        return availableCenters.stream()
+                .filter(center -> !CollectionUtils.isEmpty(center.getSessions()))
+                .collect(Collectors.toList());
     }
 }
