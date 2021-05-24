@@ -60,8 +60,8 @@ public class FilterService {
     private Predicate<Session> getSessionPredicate() {
         return session -> {
             return session.getAvailableCapacity() > 0                              //capacityCheck
-                    && minAgeLimit == null || minAgeLimit.equals(0L) || session.getMinAgeLimit().equals(minAgeLimit)            //minAgeCheck
-                    && vaccineType == null || vaccineType.isBlank() || session.getVaccine().equals(vaccineType)                 //vaccineTypeCheck
+                    && (minAgeLimit == null || minAgeLimit.equals(0L) || session.getMinAgeLimit().equals(minAgeLimit))            //minAgeCheck
+                    && (vaccineType == null || vaccineType.isBlank() || session.getVaccine().equals(vaccineType))                 //vaccineTypeCheck
                     && (doseNumber == null || doseNumber.equals(0L) || (doseNumber.equals(1L) ?
                         (session.getAvailableCapacityDose1() > 0L) :
                         (!doseNumber.equals(2L) || (session.getAvailableCapacityDose2() > 0L))))                                //doseNumberCheck
@@ -72,8 +72,8 @@ public class FilterService {
     private Predicate<Center> getCenterPredicate() {
         return center -> {
             return !CollectionUtils.isEmpty(center.getSessions())                              //sessionsAvailabilityCheck
-                    && blockName == null || blockName.isBlank() || center.getBlockName().equals(blockName)                  //blockNameCheck
-                    && feeType == null || feeType.isBlank() || center.getFeeType().equals(feeType)                          //feeTypeCheck
+                    && (blockName == null || blockName.isBlank() || center.getBlockName().equals(blockName))                  //blockNameCheck
+                    && (feeType == null || feeType.isBlank() || center.getFeeType().equals(feeType))                          //feeTypeCheck
             ;
         };
     }
