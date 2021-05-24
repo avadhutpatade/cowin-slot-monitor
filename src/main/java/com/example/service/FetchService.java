@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +34,12 @@ public class FetchService {
     @Autowired
     private FilterService filterService;
 
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private SimpleDateFormat simpleDateFormat;
+
     private String todaysDate;
 
     public Map<String, Map<String, List<Center>>> getAvailableCenters() {
@@ -41,11 +47,11 @@ public class FetchService {
         setTodaysDate();
         List<State> states = getAllStates();
         State state = filterService.getState(states);
-        if(null != state) {
+        if (null != state) {
             Map<String, List<Center>> stateData = new HashMap<>();
             List<District> districts = getAllDistrictsByState(state.getStateId());
             District district = filterService.getDistrict(districts);
-            if(null != district) {
+            if (null != district) {
                 List<Center> centers = getAllCentersByDistrict(district.getDistrictId());
                 List<Center> availableCenters = filterService.filterCenters(centers);
                 if (!CollectionUtils.isEmpty(availableCenters))
@@ -53,6 +59,7 @@ public class FetchService {
                 countryData.put(state.getStateName(), stateData);
             }
         }
+        emailService.sendMail(countryData);
         return countryData;
     }
 
@@ -87,6 +94,6 @@ public class FetchService {
     }
 
     private void setTodaysDate() {
-        todaysDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        todaysDate = simpleDateFormat.format(new Date());
     }
 }

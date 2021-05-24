@@ -15,6 +15,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.web.client.RestTemplate;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -70,5 +71,10 @@ public class BeansConfigurer {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
+    }
+
+    @Bean
+    public SimpleDateFormat simpleDateFormat() {
+        return new SimpleDateFormat("dd-MM-yyyy");
     }
 }
