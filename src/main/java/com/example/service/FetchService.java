@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
@@ -44,6 +45,7 @@ public class FetchService {
 
     private String todaysDate;
 
+    @Scheduled(fixedDelayString = "${scheduled.delay.milliseconds.time}")
     public Map<String, Map<String, List<Center>>> getAvailableCenters() {
         Map<String, Map<String, List<Center>>> countryData = new HashMap<>();
         List<State> states = getAllStates();

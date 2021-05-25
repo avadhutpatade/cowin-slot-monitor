@@ -40,8 +40,7 @@ public class EmailService {
                 mailMessage.setTo(recipient);
                 mailMessage.setSubject(subject);
                 mailMessage.setText(body);
-//                javaMailSender.send(mailMessage);
-                System.out.println(mailMessage);
+                javaMailSender.send(mailMessage);
             }
         }
     }
